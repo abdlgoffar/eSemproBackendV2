@@ -27,6 +27,9 @@ class AcademicAdministrationCreateProposalsInvitationsRequest extends FormReques
     public function rules()
     {
         return [
+            'date' => ['required'],
+            'hour' => ['required'],
+            'coordinator' => ['required'],
             'students_proposals' => ["required", "array", "min:1"],
             'students_proposals.*' => ['integer'],
         ];

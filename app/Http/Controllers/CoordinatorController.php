@@ -41,10 +41,11 @@ class CoordinatorController extends Controller
         $proposals = DB::table('proposals')
         ->join('invitations', 'invitations.id', '=', 'proposals.invitation_id')
         ->join('coordinators', 'coordinators.id', '=', 'invitations.coordinator_id')
-        ->select('proposals.title', 'proposals.id', 'proposals.upload_date')
+         ->join('students', 'proposals.student_id', '=', 'students.id')
+        ->select('proposals.title', 'proposals.id', 'proposals.upload_date', "students.name", "students.nrp", )
         ->where('coordinators.id',   $coordinator->id)
         ->whereIn('proposals.examiners_approval_status', ['approved', 'revision', 'rejected', 'pending'])
-        ->get();
+        ->paginate(1);
 
         return $proposals;
     }
@@ -69,7 +70,8 @@ class CoordinatorController extends Controller
         $proposal = DB::table('proposals')
         ->join('invitations', 'invitations.id', '=', 'proposals.invitation_id')
         ->join('coordinators', 'coordinators.id', '=', 'invitations.coordinator_id')
-        ->select('proposals.title', 'proposals.id', 'proposals.upload_date', 'proposals.coordinator_approval_status')
+        ->join('students', 'proposals.student_id', '=', 'students.id')
+        ->select('proposals.title', 'proposals.id', 'proposals.upload_date', 'proposals.coordinator_approval_status', "students.name", "students.nrp", "students.phone")
         ->where('coordinators.id',   $coordinator->id)
         ->whereIn('proposals.examiners_approval_status', ['approved', 'revision', 'rejected', 'pending'])
         ->where('proposals.id', $proposal_id)

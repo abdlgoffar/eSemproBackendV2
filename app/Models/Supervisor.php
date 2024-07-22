@@ -33,8 +33,5 @@ class Supervisor extends Model
     }
 
     
-    public function students(): BelongsToMany
-    {
-        return $this->belongsToMany(Student::class, "students_supervisors")->withTimestamps();
-    }
+  
 }

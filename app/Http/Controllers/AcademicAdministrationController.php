@@ -92,17 +92,109 @@ class AcademicAdministrationController extends Controller
 
     public function createProposalsInvitations($invitation_id, AcademicAdministrationCreateProposalsInvitationsRequest $request)
     {
-     
         $data = $request->validated();
+        
 
+        foreach ($data["students_proposals"] as $i) {
+            $c = DB::table('coordinators')
+                        ->join('invitations', '.invitations.coordinator_id', '=', 'coordinators.id')
+                        ->join('proposals', '.proposals.invitation_id', '=', 'invitations.id')
+                        ->join('rooms', 'rooms.id', '=', 'proposals.room_id')
+                        ->select('rooms.name', "coordinators.name as coord")
+                        ->where('coordinators.id', $data["coordinator"])
+                        ->where('invitations.implementation_date', $data["date"])
+                        ->where('invitations.implementation_hour', $data["hour"])
+                        ->first();
+                
+            $r = DB::table('proposals')
+                        ->join('rooms', 'rooms.id', '=', 'proposals.room_id')
+                        ->select('rooms.name')
+                        ->where('proposals.id', $i)
+                        ->first();
+
+                        if ($c && $r && $c->name && $c->name != $r->name) {
+                            $proposal = Proposal::where('id', $i)->first();
+                            throw new HttpResponseException(response([
+                                "errors" => [
+                                    "messages" => [
+                                        "coord_have_schedule" => ["The Coord {$c->coord} assigned to test the proposal {$proposal->student->name} already has a schedule At Same Time and other Class"]
+                                    ]
+                                ]
+                            ], 404));
+                        }
+
+        }
+
+        
+
+
+        //dapatkan setiap dosen penguji proposal
+        foreach ($data["students_proposals"] as $i) {
+            $examiners = DB::table('proposals')
+                        ->join('examiners_proposals', 'examiners_proposals.proposal_id', '=', 'proposals.id')
+                        ->join('examiners', 'examiners_proposals.examiner_id', '=', 'examiners.id')
+                        ->select('examiners.name')
+                        ->where('proposals.id', $i)
+                        ->get();
+
+            foreach($examiners as $e) {
+               
+                //ketahui apakah setiap dosen penguji sudah memiliki jadwal di waktu yg sama dan dapatkan nama
+                $room = DB::table('examiners')
+                        ->join('examiners_proposals', 'examiners_proposals.examiner_id', '=', 'examiners.id')
+                        ->join('proposals', 'examiners_proposals.proposal_id', '=', 'proposals.id')
+                        ->join('invitations', 'invitations.id', '=', 'proposals.invitation_id')
+                        ->join('rooms', 'rooms.id', '=', 'proposals.room_id')
+                        ->select('rooms.name')
+                        ->where('examiners.name', $e->name)
+                        ->where('invitations.implementation_date', $data["date"])
+                        ->where('invitations.implementation_hour', $data["hour"])
+                        ->first();
+                
+                // dapatkan kelas dari proposal yang baru
+                $room2 = DB::table('proposals')
+                        ->join('rooms', 'rooms.id', '=', 'proposals.room_id')
+                        ->select('rooms.name')
+                        ->where('proposals.id', $i)
+                        ->first();
+
+                // check apakah dosen penguji memiliki jadwal bentrok.
+                if ($room && $room2 && $room->name && $room->name != $room2->name) {
+                    $proposal = Proposal::where('id', $i)->first();
+                    throw new HttpResponseException(response([
+                        "errors" => [
+                            "messages" => [
+                                "examiner_have_schedule" => ["The examiner {$e->name} assigned to test the proposal {$proposal->student->name} already has a schedule At Same Time and other Class"]
+                            ]
+                        ]
+                    ], 404));
+                }
+            }
+        }
+
+        
         foreach ($data["students_proposals"] as $i) {
             $proposal = Proposal::where('id', $i)->first();
             $proposal->invitation_id = $invitation_id;
             $proposal->save();
         }
 
-        
+
+        return response()->json("Oke")->setStatusCode(201);
+
+
+    
     }
+        
+
+
+
+
+
+
+
+        
+    
 
    
 

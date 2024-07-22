@@ -30,12 +30,6 @@ return new class extends Migration
             $table->foreignId("invitation_id")->nullable();
             $table->foreignId("head_study_program_id")->nullable(false);
             $table->foreignId("user_id")->nullable(false);
-            $table->foreignId("attendance_id")->nullable();
-
-
-
-
-
 
             
         });

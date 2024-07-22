@@ -43,10 +43,7 @@ class Student extends Model
     }
 
 
-    //one student can have one attendance
-    public function attendance(): BelongsTo {
-        return $this->belongsTo(Attendance::class, "attendance_id", "id");
-    }
+  
 
 
     //one student can have one invitation
@@ -61,8 +58,5 @@ class Student extends Model
         return $this->hasMany(Proposal::class, "student_id", "id");
     }
 
-    public function supervisors(): BelongsToMany
-    {
-        return $this->belongsToMany(Supervisor::class, "students_supervisors")->withTimestamps();
-    }
+   
 }

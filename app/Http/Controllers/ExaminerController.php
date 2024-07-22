@@ -50,7 +50,7 @@ class ExaminerController extends Controller
         ->select('proposals.id','proposals.title', 'proposals.upload_date',  "students.name", "students.nrp", "proposals.examiners_approval_status")
         ->where('examiners.id',   $examiner->id)
         ->distinct()
-        ->get();
+        ->paginate(1);
     
         return $proposals;
     }
@@ -72,17 +72,25 @@ class ExaminerController extends Controller
         $user = Auth::user();
         $examiner = Examiner::where('user_id', $user->id)->first();
 
-        $proposals = DB::table('examiners')
+        $proposal = DB::table('examiners')
         ->join('examiners_proposals', 'examiners_proposals.examiner_id', '=', 'examiners.id')
         ->join('proposals', 'proposals.id', '=', 'examiners_proposals.proposal_id')
         ->join('invitations', 'invitations.id', '=', 'proposals.invitation_id')
-        ->select('proposals.id','proposals.title', 'proposals.upload_date', "examiners_proposals.examiner_assessment_status")
+        ->join('students', 'proposals.student_id', '=', 'students.id')
+        ->select('proposals.id','proposals.title', 'proposals.upload_date', "examiners_proposals.examiner_assessment_status", "students.name", "students.nrp", "students.phone")
         ->where('examiners.id',   $examiner->id)
         ->where('proposals.id',   $proposal_id)
         ->distinct()
         ->first();
     
-        return $proposals;
+        $examiners = DB::table('examiners')
+        ->join('examiners_proposals', 'examiners_proposals.examiner_id', '=', 'examiners.id')
+        ->select('examiners.name', 'examiners_proposals.*')
+        ->where('examiners_proposals.proposal_id',   $proposal_id)
+        ->distinct()
+        ->get();
+
+        return response()->json(["proposal" => $proposal, "examiners" => $examiners], 201);
     }
 
     public function createProposalAssessmentStatus($proposal_id, ExaminerCreateProposalAssessmentStatusRequest $request)

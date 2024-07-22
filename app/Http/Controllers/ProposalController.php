@@ -102,4 +102,44 @@ class ProposalController extends Controller
         return Storage::download($proposalPdf->path . "/{$proposalPdf->saved_name}", $proposalPdf->original_name, ['Content-Type: application/pdf']);
     }
 
+
+    public function getNewProposalPdf($proposal_id): StreamedResponse
+    {
+        $proposalPdf = ProposalPdf::where("proposal_id", $proposal_id)->orderBy('created_at', 'desc')->first();
+
+        if (!$proposalPdf) {
+            throw new HttpResponseException(response([
+                "errors" => [
+                    "messages" => [
+                        "proposal_pdf_not_found" => ["proposal PDF not found"]
+                    ]
+                ]
+            ], 404));
+        }
+
+        return Storage::download($proposalPdf->path . "/{$proposalPdf->saved_name}", $proposalPdf->original_name);                              
+    }
+
+    public function getOldProposalPdf($proposal_id): StreamedResponse
+    {
+        $proposalPdf = ProposalPdf::where("proposal_id", $proposal_id)->orderBy('created_at', 'asc')->first();
+
+        if (!$proposalPdf) {
+            throw new HttpResponseException(response([
+                "errors" => [
+                    "messages" => [
+                        "proposal_pdf_not_found" => ["proposal PDF not found"]
+                    ]
+                ]
+            ], 404));
+        }
+
+        return Storage::download($proposalPdf->path . "/{$proposalPdf->saved_name}", $proposalPdf->original_name);                              
+    }
+
+
+
+
+
+
 }

@@ -2,14 +2,14 @@
 
 namespace App\Http\Requests;
 
+
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Validation\Rules\File;
 
-class ProposalCreateRequest extends FormRequest
+class HeadStudyProgramUpdateProposalExaminersRequest extends FormRequest
 {
-    /**
+      /**
      * Determine if the user is authorized to make this request.
      *
      * @return bool
@@ -27,10 +27,9 @@ class ProposalCreateRequest extends FormRequest
     public function rules()
     {
         return [
-            'title' => ['required', 'max:700', "string"],
-            'upload_date' => ['required'],
-            'period' => ['required'],
-            'proposal_file' => ['required', FIle::types(['pdf','doc','docx'])],
+            'proposal_id' => ["required"],
+            'new_examiner' => ["required"],
+            'old_examiner' => ["required"],
         ];
     }
 

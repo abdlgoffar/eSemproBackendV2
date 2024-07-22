@@ -13,10 +13,20 @@ class RoomSeeder extends Seeder
      */
     public function run(): void
     {
-        for ($i=1; $i <= 7; $i++) { 
-            $room = new Room();
-            $room->name = "room".$i;
-            $room->save();
-        }
+
+        $room = new Room();
+        $room->name = "Web";
+        $room->save();
+
+        $room = new Room();
+        $room->name = "Mobile";
+        $room->save();
+
+        $room = new Room();
+        $room->name = "AI";
+        $room->save();
+
+    
+
     }
 }

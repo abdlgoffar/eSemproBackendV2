@@ -27,7 +27,7 @@ class Invitation extends Model
 
 
 
-    //one attendance can have many student
+
     public function students(): HasMany {
         return $this->hasMany(Student::class, "invitation_id", "id");
     }

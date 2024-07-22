@@ -26,7 +26,7 @@ class StudentRevisionRequest extends FormRequest
     public function rules()
     {
         return [
-            'proposal_file' => ['required', FIle::types(['pdf'])],
+            'proposal_file' => ['required', FIle::types(['pdf','doc','docx'])],
         ];
     }
 

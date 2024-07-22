@@ -52,17 +52,16 @@ class UserSeeder extends Seeder
         }
         
         $user = new User();
-        $user->username = "Anang@gmail.com";
-        $user->password = Hash::make("Anang");
-        $user->role = "examiners";
+        $user->username = "DedyAri@gmail.com";
+        $user->password = Hash::make("123");
+        $user->role = "academic-administrations";
         $user->save();
 
         $baa = new AcademicAdministration();
         $baa->user_id = $user->id;
-        $baa->name = "Anang";
-        $baa->address = "Jl. Jendral Sudirman Selatan";
+        $baa->name = "Dedy Ari P., S.Kom";
+        $baa->address = "Jl. Tidar Malang";
         $baa->phone =  generatePhone();
         $baa->save();
-
     }
 }

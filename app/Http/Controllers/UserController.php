@@ -67,6 +67,17 @@ class UserController extends Controller
 
         return new UserResponse($user);
     }
+
+    public function logout()
+    {
+        $auth = Auth::user();
+
+        $user = User::where('token', $auth->token )->first();
+        $user->token = null;
+        $user->save();
+
+        return $user;
+    }
     
     public function get(): UserResponse
     {
@@ -79,7 +90,7 @@ class UserController extends Controller
     {
         $auth = Auth::user();
 
-        $user = User::with('student')->with('examiner')->with('supervisor')->with('headStudyProgram')->with('coordinator')->where("token", $auth->token)->first();
+        $user = User::with('student')->with('academicAdministration')->with('examiner')->with('supervisor')->with('headStudyProgram')->with('coordinator')->where("token", $auth->token)->first();
         return $user;
     }
 
@@ -92,7 +103,7 @@ class UserController extends Controller
                 throw new HttpResponseException(response([
                     "errors" => [
                         "messages" => [
-                            "username_has_created" =>  ["username with" . $data["username"] .  "have role" . $i]
+                            "username_has_created" =>  [$data["username"] .  " have role " . $i]
                         ]
                     ]
                 ], 404));
@@ -104,7 +115,7 @@ class UserController extends Controller
                 throw new HttpResponseException(response([
                     "errors" => [
                         "messages" => [
-                            "not_valid_role" => ["teachers cannot have the role of students and students can have the role of teachers"]
+                            "not_valid_role" => ["user role invalid"]
                         ]
                     ]
                 ], 404));
@@ -116,7 +127,7 @@ class UserController extends Controller
                 throw new HttpResponseException(response([
                     "errors" => [
                         "messages" => [
-                            "not_valid_role" => ["teachers cannot have the role of students and students can have the role of teachers"]
+                            "not_valid_role" => ["user role invalid"]
                         ]
                     ]
                 ], 404));
@@ -124,11 +135,11 @@ class UserController extends Controller
         }
       
         foreach ($data["roles"] as $i) {
-            if ($i === "students" && (empty($data["nrp"]) || empty($data["head_study_program_id"]))) {
+            if ($i === "students" && (empty($data["nrp"]))) {
                 throw new HttpResponseException(response([
                     "errors" => [
                         "messages" => [
-                            "not_valid_role" => ["user with role student must have nrp and head study program"]
+                            "nrp_incorrect" => ["student must have nrp"]
                         ]
                     ]
                 ], 404));
@@ -136,26 +147,49 @@ class UserController extends Controller
         }
 
         foreach ($data["roles"] as $i) {
-            if (($i === "supervisors" || $i === "examiners" || $i === "head-study-programs" || $i === "coordinators" ) && (isset($data["nrp"]) || isset($data["head_study_program_id"]))) {
+            if (($i === "supervisors" || $i === "examiners" || $i === "head-study-programs" || $i === "coordinators" ) && (isset($data["nrp"]))) {
                 throw new HttpResponseException(response([
                     "errors" => [
                         "messages" => [
-                            "not_valid_role" => ["user with role teacher must not have nrp and head study program"]
+                            "nrp_incorrect" => ["teacher must not have nrp"]
                         ]
                     ]
                 ], 404));
             }
         }
 
+        foreach ($data["roles"] as $i) {
+            if ($i === "students" && (empty($data["head_study_program_id"]))) {
+                throw new HttpResponseException(response([
+                    "errors" => [
+                        "messages" => [
+                            "hsp_incorrect" => ["student must have head study program"]
+                        ]
+                    ]
+                ], 404));
+            }
+        }
+
+        foreach ($data["roles"] as $i) {
+            if (($i === "supervisors" || $i === "examiners" || $i === "head-study-programs" || $i === "coordinators" ) && (isset($data["head_study_program_id"]))) {
+                throw new HttpResponseException(response([
+                    "errors" => [
+                        "messages" => [
+                            "hsp_incorrect" => ["teacher must not have head study program"]
+                        ]
+                    ]
+                ], 404));
+            }
+        }
 
         foreach ($data["roles"] as $i) {
             $user = new User();
             $user->username = $data["username"];
-            $user->password = $data["password"];
+            $user->password = Hash::make($data["password"]);
             $user->role = $i;
             $user->save();
 
-            if ($user->role = "students") {
+            if ($user->role == "students") {
                 $student = new Student();
                 $student->name = $data["name"];
                 $student->address = $data["address"];
@@ -165,7 +199,7 @@ class UserController extends Controller
                 $student->head_study_program_id = $data["head_study_program_id"];
                 $student->save();
             }
-            if($user->role = "supervisors") {
+            if($user->role == "supervisors") {
                 $supervisor = new Supervisor();
                 $supervisor->name = $data["name"];
                 $supervisor->address = $data["address"];
@@ -173,7 +207,7 @@ class UserController extends Controller
                 $supervisor->user_id = $user->id;
                 $supervisor->save();
             }
-            if($user->role = "examiners") {
+            if($user->role == "examiners") {
                 $examiner = new Examiner();
                 $examiner->name = $data["name"];
                 $examiner->address = $data["address"];
@@ -181,7 +215,7 @@ class UserController extends Controller
                 $examiner->user_id = $user->id;
                 $examiner->save();
             }
-            if($user->role = "coordinators") {
+            if($user->role == "coordinators") {
                 $coordinator = new Coordinator();
                 $coordinator->name = $data["name"];
                 $coordinator->address = $data["address"];
@@ -189,7 +223,7 @@ class UserController extends Controller
                 $coordinator->user_id = $user->id;
                 $coordinator->save();
             }
-            if($user->role = "head-study-programs") {
+            if($user->role == "head-study-programs") {
                 $headStudyProgram = new HeadStudyProgram();
                 $headStudyProgram->name = $data["name"];
                 $headStudyProgram->address = $data["address"];
@@ -414,9 +448,9 @@ class UserController extends Controller
     //     return (new UserResponse($user))->response()->setStatusCode(201); 
 
     // }
-    // public function getUsersByRole($role) 
-    // {
-    //     $users = User::with('student')->with('examiner')->with('supervisor')->with('headStudyProgram')->with('coordinator')->where('role', $role)->get();
-    //     return $users;
-    // }
+    public function getUsersByRole($role) 
+    {
+        $users = User::with('student')->with('examiner')->with('supervisor')->with('headStudyProgram')->with('coordinator')->where('role', $role)->get();
+        return $users;
+    }
 }

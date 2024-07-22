@@ -21,8 +21,7 @@ class StudentController extends Controller
     public function createStudentSupervisor(StudentSupervisorCreateRequest $request, $proposal_id): JsonResponse
     {
         $user = Auth::user();
-        $student = Student::where('user_id', $user->id)->first();
-
+       
         $data = $request->validated();
 
         foreach ($data["supervisors"] as $i) {
@@ -34,22 +33,7 @@ class StudentController extends Controller
 
 
 
-        //create student supervisor 
-        foreach ($data["supervisors"] as $i) {
-            $supervisor = Supervisor::where('id', $i)->first();
-            if (!$supervisor) {
-                throw new HttpResponseException(response([
-                    "errors" => [
-                        "messages" => [
-                            "create_supervisor_data_failed" => ["there supervisor data invalid"]
-                        ]
-                    ]
-                ], 404));
-            }
-        }
-        $studentSupervisor = $student->supervisors()->sync($data["supervisors"]);
-
-        return response()->json($studentSupervisor, 201);
+        return response()->json("Ok", 201);
     }
 
 
@@ -120,35 +104,56 @@ class StudentController extends Controller
             ->where('supevisors_proposals.proposal_id',   $proposal_id)
             ->get();
 
+        $coordinator = DB::table('proposals')
+            ->join('students', 'students.id', '=', 'proposals.student_id')
+            ->join("invitations", "proposals.invitation_id", "=", "invitations.id")
+            ->join("coordinators", "invitations.coordinator_id", "=", "coordinators.id")
+            ->select('coordinators.name', "proposals.coordinator_approval_status")
+            ->where('students.id',   $student->id)
+            ->where('proposals.id',   $proposal_id)
+            ->get();
 
-        return response()->json(["proposal" => $proposal, "examiners" => $examiners, "supervisors" => $supervisors], 201);
+
+        return response()->json(["proposal" => $proposal, "examiners" => $examiners, "supervisors" => $supervisors, "student" => $student, "coordinator" => $coordinator], 201);
     }
 
 
     public function revision($proposal_id, StudentRevisionRequest $request) 
     {
         $request->validated();
-        
-        $oldProposalPdf = ProposalPdf::where("proposal_id", $proposal_id)->first();
-       
-        //create proposal new
-         $file = $request->file('proposal_file');
-         $name = time() . $file->getClientOriginalName();
-         $file->storeAs('public/PDF/Proposals', $name);
-         
-         $proposalPdf = new ProposalPdf();
-         $proposalPdf->saved_name = $name;
-         $proposalPdf->original_name = $file->getClientOriginalName();
-         $proposalPdf->path = 'public/PDF/Proposals';
-         $proposalPdf->proposal_id = $proposal_id;
-         $proposalPdf->save();
 
-         if ($proposalPdf) {
+        $amountProposalFile = ProposalPdf::where("proposal_id", $proposal_id)->count();
+
+        if ($amountProposalFile == 1) {
+            $file = $request->file('proposal_file');
+            $name = time() . $file->getClientOriginalName();
+            $file->storeAs('public/PDF/Proposals', $name);
+
+            $newProposalPdf = new ProposalPdf();
+            $newProposalPdf->saved_name = $name;
+            $newProposalPdf->original_name = $file->getClientOriginalName();
+            $newProposalPdf->path = 'public/PDF/Proposals';
+            $newProposalPdf->proposal_id = $proposal_id;
+            $newProposalPdf->save();
+        } else {
+            $oldProposalPdf = ProposalPdf::where("proposal_id", $proposal_id)->orderBy('created_at', 'asc')->first();
+            //create proposal new
+            $file = $request->file('proposal_file');
+            $name = time() . $file->getClientOriginalName();
+            $file->storeAs('public/PDF/Proposals', $name);
+             
+            $proposalPdf = new ProposalPdf();
+            $proposalPdf->saved_name = $name;
+            $proposalPdf->original_name = $file->getClientOriginalName();
+            $proposalPdf->path = 'public/PDF/Proposals';
+            $proposalPdf->proposal_id = $proposal_id;
+            $proposalPdf->save();
+    
             Storage::delete($oldProposalPdf->path."/".$oldProposalPdf->saved_name);//delete proposal pdf file from server
-            $oldProposalPdf->forceDelete(); //hard delete proposal pdf
-         }
-
-
-         return response()->json(["proposalPdf" => $proposalPdf])->setStatusCode(201);        
+            $oldProposalPdf->forceDelete(); //hard delete proposal pdf from database
+             
+        }
+        
+         return response()->json("OK")->setStatusCode(201);        
     }
 }

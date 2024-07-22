@@ -31,7 +31,7 @@ class SupervisorController extends Controller
         ->join('students', 'proposals.student_id', '=', 'students.id')
         ->select('proposals.title', 'proposals.id', 'proposals.upload_date', "students.name", "students.nrp", "proposals.supervisors_approval_status")
         ->where('supervisors.id', $supervisor->id)
-        ->get();
+        ->paginate(1);
 
         return $proposals;
 
@@ -57,7 +57,8 @@ class SupervisorController extends Controller
         $proposals = DB::table('supevisors_proposals')
         ->join('proposals', 'supevisors_proposals.proposal_id', '=', 'proposals.id')
         ->join('supervisors', 'supevisors_proposals.supervisor_id', '=', 'supervisors.id')
-        ->select('proposals.title', 'proposals.id', 'proposals.upload_date', 'supevisors_proposals.supervisor_approval_status')
+        ->join('students', 'proposals.student_id', '=', 'students.id')
+        ->select('proposals.title', 'proposals.id', 'proposals.upload_date', 'supevisors_proposals.supervisor_approval_status', "students.name", "students.nrp", "students.phone")
         ->where('supervisors.id', $supervisor->id)
         ->where('proposals.id', $proposal_id)
         ->first();

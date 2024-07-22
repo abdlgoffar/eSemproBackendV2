@@ -40,9 +40,7 @@ class Proposal extends Model
     }
 
 
-    public function revisions(): HasMany {
-        return $this->hasMany(Revision::class, "proposal_id", "id");
-    }
+   
 
     
     
